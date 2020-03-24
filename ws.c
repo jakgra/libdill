@@ -251,7 +251,7 @@ int dill_ws_attach_server_mem(int s, int flags,
            continue;
         }
         if(strcasecmp(name, "Connection") == 0) {
-           if(has_connection || strcasecmp(value, "Upgrade") != 0) {
+           if(has_connection) {
                err = EPROTO; goto error;}
            has_connection = 1;
            continue;
