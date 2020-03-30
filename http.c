@@ -42,6 +42,8 @@ struct dill_http_sock {
     struct dill_hvfs hvfs;
     /* Underlying SUFFIX socket. */
     int u;
+    /* Underlying bytestream socket. */
+    int ub;
     unsigned int mem : 1;
     struct dill_suffix_storage suffix_mem;
     struct dill_term_storage term_mem;
@@ -66,6 +68,7 @@ int dill_http_attach_mem(int s, struct dill_http_storage *mem) {
     /* Take the ownership of the underlying socket. */
     s = dill_hown(s);
     if(dill_slow(s < 0)) {err = errno; goto error;}
+    obj->ub = s;
     /* Wrap the underlying socket into SUFFIX and TERM protocol. */
     s = dill_suffix_attach_mem(s, "\r\n", 2, &obj->suffix_mem);
     if(dill_slow(s < 0)) {err = errno; goto error;}
@@ -112,7 +115,7 @@ int dill_http_detach(int s, int64_t deadline) {
     int err;
     struct dill_http_sock *obj = dill_hquery(s, dill_http_type);
     if(dill_slow(!obj)) return -1;
-    int u = dill_term_detach(obj->u, deadline);
+    int u = dill_term_detach_ignore_in(obj->u, deadline);
     if(dill_slow(u < 0)) {err = errno; goto error;}
     u = dill_suffix_detach(u, deadline);
     if(dill_slow(u < 0)) {err = errno; goto error;}
@@ -183,6 +186,20 @@ int dill_http_recvrequest(int s, char *command, size_t commandlen,
     while(obj->rxbuf[pos] == ' ') ++pos;
     if(dill_slow(obj->rxbuf[pos] != 0)) {errno = EPROTO; return -1;}
     return 0;
+}
+
+int dill_http_pause(int s, int64_t deadline) {
+    int err;
+    struct dill_http_sock *obj = dill_hquery(s, dill_http_type);
+    if(dill_slow(!obj)) return -1;
+    int u = dill_term_pause(obj->u, deadline);
+    if(dill_slow(u < 0)) {err = errno; goto error;}
+    u = dill_suffix_detach(u, deadline);
+    if(dill_slow(u < 0)) {err = errno; goto error;}
+error:
+    if(!obj->mem) free(obj);
+    errno = err;
+    return u;
 }
 
 int dill_http_sendstatus(int s, int status, const char *reason, int64_t deadline) {

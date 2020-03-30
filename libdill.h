@@ -738,6 +738,9 @@ DILL_EXPORT int dill_http_done(
 DILL_EXPORT int dill_http_detach(
     int s,
     int64_t deadline);
+DILL_EXPORT int dill_http_pause(
+    int s,
+    int64_t deadline);
 DILL_EXPORT int dill_http_sendrequest(
     int s,
     const char *command,
@@ -779,6 +782,7 @@ DILL_EXPORT int dill_http_recvfield(
 #define http_attach_mem dill_http_attach_mem
 #define http_done dill_http_done
 #define http_detach dill_http_detach
+#define http_pause dill_http_pause
 #define http_sendrequest dill_http_sendrequest
 #define http_recvrequest dill_http_recvrequest
 #define http_sendstatus dill_http_sendstatus
@@ -1076,6 +1080,12 @@ DILL_EXPORT int dill_term_done(
 DILL_EXPORT int dill_term_detach(
     int s,
     int64_t deadline);
+DILL_EXPORT int dill_term_detach_ignore_in(
+    int s,
+    int64_t deadline);
+DILL_EXPORT int dill_term_pause(
+    int s,
+    int64_t deadline);
 
 #if !defined DILL_DISABLE_RAW_NAMES
 #define term_storage dill_term_storage
@@ -1083,6 +1093,8 @@ DILL_EXPORT int dill_term_detach(
 #define term_attach_mem dill_term_attach_mem
 #define term_done dill_term_done
 #define term_detach dill_term_detach
+#define term_detach_ignore_in dill_term_detach_ignore_in
+#define term_pause dill_term_pause
 #endif
 
 /******************************************************************************/

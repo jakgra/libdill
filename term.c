@@ -136,13 +136,42 @@ int dill_term_detach(int s, int64_t deadline) {
     if(!self->indone) {
         while(1) {
             struct dill_iolist iol = {NULL, SIZE_MAX, NULL, 0};
+            fprintf(stderr, "recovering...\n");
             ssize_t sz = dill_term_mrecvl(&self->mvfs, &iol, &iol, deadline);
+            fprintf(stderr, "recovering done...\n");
             if(sz < 0) {
                 if(errno == EPIPE) break;
                 err = errno;
                 goto error;
             }
         }
+    }
+    int u = self->u;
+    if(!self->mem) free(self);
+    return u;
+error:;
+    int rc = dill_hclose(s);
+    dill_assert(rc == 0);
+    errno = err;
+    return -1;
+}
+
+int dill_term_pause(int s, int64_t deadline) {
+    int err;
+    struct dill_term_sock *self = dill_hquery(s, dill_term_type);
+    if(dill_slow(!self)) return -1;
+    int u = self->u;
+    if(!self->mem) free(self);
+    return u;
+}
+
+int dill_term_detach_ignore_in(int s, int64_t deadline) {
+    int err;
+    struct dill_term_sock *self = dill_hquery(s, dill_term_type);
+    if(dill_slow(!self)) return -1;
+    if(!self->outdone) {
+        int rc = dill_term_done(s, deadline);
+        if(dill_slow(rc < 0)) {err = errno; goto error;}
     }
     int u = self->u;
     if(!self->mem) free(self);
